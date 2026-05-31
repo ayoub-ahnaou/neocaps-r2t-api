@@ -8,11 +8,11 @@
         <version>4.0.6</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.neocaps-r2p</groupId>
-    <artifactId>neocaps-r2p</artifactId>
+    <groupId>com.neocaps-api</groupId>
+    <artifactId>neocaps-api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>neocaps-r2p</name>
-    <description>neocaps-r2p</description>
+    <name>neocaps-api</name>
+    <description>neocaps-api</description>
     <url/>
     <licenses>
         <license/>
@@ -93,6 +93,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
