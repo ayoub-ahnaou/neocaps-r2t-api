@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface LotRepository extends JpaRepository<Lot, UUID> {
     Optional<Lot> findBySupplierLotNumber(String supplierLotNumber);
     boolean existsBySupplierLotNumber(String supplierLotNumber);
+    boolean existsByProductName(String productName);
 }

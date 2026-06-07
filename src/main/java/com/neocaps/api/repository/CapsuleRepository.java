@@ -12,16 +12,25 @@ import java.util.UUID;
 
 @Repository
 public interface CapsuleRepository extends JpaRepository<Capsule, UUID> {
-    Optional<Capsule> findByBarcode(String barcode);
-    boolean existsByBarcode(String barcode);
     boolean existsByDisplayId(String displayId);
     long countByLot(Lot lot);
     
     // Checks if a tray position is occupied by any capsule that is not stored or in error status
     boolean existsByTrayPositionAndStatusNotIn(Integer trayPosition, Collection<CapsuleStatus> statuses);
     
-    // Checks if a rack position is occupied by any capsule
-    boolean existsByRackNumberAndRackPosition(Integer rackNumber, Integer rackPosition);
-    
     List<Capsule> findByLot(Lot lot);
+    
+    Optional<Capsule> findByDisplayId(String displayId);
+
+    default Optional<Capsule> findByBarcode(String barcode) {
+        if (barcode == null || barcode.trim().isEmpty()) {
+            return Optional.empty();
+        }
+        try {
+            return findById(UUID.fromString(barcode.trim()));
+        } catch (IllegalArgumentException e) {
+            // Fall back to displayId lookup if the barcode is not a valid UUID format
+            return findByDisplayId(barcode.trim());
+        }
+    }
 }
