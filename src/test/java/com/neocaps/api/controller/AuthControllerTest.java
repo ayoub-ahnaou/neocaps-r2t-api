@@ -92,7 +92,7 @@ class AuthControllerTest {
         assertEquals(HttpStatus.OK, loginResponse.getStatusCode());
         assertNotNull(loginResponse.getBody());
         assertEquals("logintest", loginResponse.getBody().getUsername());
-
+        
         // Verify login audit log
         List<AuditLog> logs = auditLogRepository.findAllByOrderByTimestampDesc();
         assertFalse(logs.isEmpty());
