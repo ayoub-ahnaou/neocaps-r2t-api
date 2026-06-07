@@ -11,6 +11,8 @@ import com.neocaps.api.repository.LotRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -25,11 +27,14 @@ public class LotService {
 
     @Transactional
     public LotResponse createLot(LotCreateRequest request) {
-        if (lotRepository.existsBySupplierLotNumber(request.getSupplierLotNumber())) {
+        if (lotRepository.existsBySupplierLotNumber(request.getSupplierLotNumber()))
             throw new AppValidationException("Lot with supplier number '" + request.getSupplierLotNumber() + "' already exists");
-        }
+
+        if (lotRepository.existsByProductName(request.getProductName()))
+            throw new AppValidationException("Lot with product name '" + request.getProductName() + "' already exists");
 
         Lot lot = Lot.builder()
+                .productName(request.getProductName())
                 .supplierLotNumber(request.getSupplierLotNumber())
                 .totalActivityMci(request.getTotalActivityMci())
                 .radioactiveConcentration(request.getRadioactiveConcentration())
@@ -39,8 +44,8 @@ public class LotService {
                 .build();
 
         Lot savedLot = lotRepository.save(lot);
-        
-        auditLogService.log("CREATE_LOT", "Created Lot " + savedLot.getSupplierLotNumber() + " with " + 
+
+        auditLogService.log("CREATE_LOT", "Created Lot " + savedLot.getSupplierLotNumber() + " with " +
                 savedLot.getTotalActivityMci() + " mCi and concentration " + savedLot.getRadioactiveConcentration() + " mCi/uL");
 
         return mapToResponse(savedLot);
@@ -48,6 +53,7 @@ public class LotService {
 
     public List<LotResponse> getAllLots() {
         return lotRepository.findAll().stream()
+                .sorted(Comparator.comparing(Lot::getCreatedAt).reversed())
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -69,12 +75,13 @@ public class LotService {
         double totalUsedVolume = capsules.stream()
                 .mapToDouble(Capsule::getVolumeMicroliter)
                 .sum();
-        
+
         double remainingVolume = Math.max(0.0, lot.getReservoirVolumeMicroliter() - totalUsedVolume);
         long capsuleCount = capsules.size();
 
         return LotResponse.builder()
                 .id(lot.getId())
+                .productName(lot.getProductName())
                 .supplierLotNumber(lot.getSupplierLotNumber())
                 .totalActivityMci(lot.getTotalActivityMci())
                 .radioactiveConcentration(lot.getRadioactiveConcentration())
@@ -83,6 +90,8 @@ public class LotService {
                 .calibrationDate(lot.getCalibrationDate())
                 .remainingVolumeMicroliter(remainingVolume)
                 .capsuleCount(capsuleCount)
+                .createdAt(lot.getCreatedAt())
+                .updatedAt(lot.getUpdatedAt())
                 .build();
     }
 }

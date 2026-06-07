@@ -3,6 +3,7 @@ package com.neocaps.api.service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -27,11 +28,11 @@ public class DecayService {
      * @return Required volume in microliters (µL)
      */
     public double calculateRequiredVolume(double lotConcentration, 
-                                           LocalDateTime lotCalibrationDate, 
-                                           LocalDateTime capsuleCalibrationDate, 
+                                           LocalDate lotCalibrationDate,
+                                           LocalDate capsuleCalibrationDate,
                                            double requestedDoseMci) {
         // Calculate elapsed time in hours between lot calibration and target capsule calibration
-        double timeDiffHours = (double) Duration.between(lotCalibrationDate, capsuleCalibrationDate).toMillis() / 3600000.0;
+        double timeDiffHours = (double) Duration.between(lotCalibrationDate.atStartOfDay(), capsuleCalibrationDate.atStartOfDay()).toMillis() / 3600000.0;
         
         // Decay constant (lambda) = ln(2) / half-life
         double lambda = Math.log(2.0) / halfLifeHours;

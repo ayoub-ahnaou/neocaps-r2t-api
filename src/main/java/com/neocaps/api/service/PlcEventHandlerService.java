@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 
 @Service
@@ -71,7 +72,7 @@ public class PlcEventHandlerService {
                 .build();
 
         robotStatusService.updateRobotStatus(status);
-        
+
         // Broadcast updated system status to frontend client topic
         messagingTemplate.convertAndSend("/topic/robot-status", robotStatusService.getSystemStatus());
         log.debug("Processed robot status update from PLC. System active: {}", status.isRunning());
@@ -109,8 +110,7 @@ public class PlcEventHandlerService {
         } else if (toPos.contains("RACK") || toPos.contains("STORE")) {
             capsule.setStatus(CapsuleStatus.STORED);
             actionType = RobotActionType.STORE;
-            desc = String.format("Capsule %s stored in Rack %d Position %d", 
-                    capsule.getDisplayId(), capsule.getRackNumber(), capsule.getRackPosition());
+            desc = String.format("Capsule %s stored in Tray Position %d", capsule.getDisplayId(), capsule.getTrayPosition());
             auditLogService.log("CAPSULE_STORAGE", desc);
         } else if (toPos.contains("PICK")) {
             actionType = RobotActionType.PICK;
@@ -126,12 +126,8 @@ public class PlcEventHandlerService {
                 .id(capsule.getId())
                 .displayId(capsule.getDisplayId())
                 .trayPosition(capsule.getTrayPosition())
-                .rackNumber(capsule.getRackNumber())
-                .rackPosition(capsule.getRackPosition())
                 .doseMci(capsule.getDoseMci())
                 .volumeMicroliter(capsule.getVolumeMicroliter())
-                .barcode(capsule.getBarcode())
-                .calibrationDate(capsule.getCalibrationDate())
                 .status(capsule.getStatus())
                 .lotId(capsule.getLot().getId())
                 .supplierLotNumber(capsule.getLot().getSupplierLotNumber())
@@ -156,11 +152,11 @@ public class PlcEventHandlerService {
 
         // Persist error action log
         robotActionService.saveAction(
-                capsule, 
-                RobotActionType.ERROR, 
-                message.getFrom(), 
-                message.getTo(), 
-                false, 
+                capsule,
+                RobotActionType.ERROR,
+                message.getFrom(),
+                message.getTo(),
+                false,
                 String.format("Code: %s, Msg: %s", errCode, errMsg)
         );
 

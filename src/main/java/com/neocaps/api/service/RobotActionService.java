@@ -52,7 +52,6 @@ public class RobotActionService {
                 .id(action.getId())
                 .capsuleId(action.getCapsule() != null ? action.getCapsule().getId() : null)
                 .capsuleDisplayId(action.getCapsule() != null ? action.getCapsule().getDisplayId() : null)
-                .capsuleBarcode(action.getCapsule() != null ? action.getCapsule().getBarcode() : null)
                 .actionType(action.getActionType())
                 .fromPosition(action.getFromPosition())
                 .toPosition(action.getToPosition())

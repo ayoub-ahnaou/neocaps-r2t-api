@@ -14,11 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,7 +25,6 @@ public class CapsuleService {
 
     private final CapsuleRepository capsuleRepository;
     private final LotRepository lotRepository;
-    private final DecayService decayService;
     private final BarcodeService barcodeService;
     private final AuditLogService auditLogService;
 
@@ -47,12 +43,7 @@ public class CapsuleService {
         }
 
         // 3 & 4. Calculate radioactive decay & required injection volume
-        double requiredVolume = decayService.calculateRequiredVolume(
-                lot.getRadioactiveConcentration(),
-                lot.getCalibrationDate(),
-                request.getCalibrationDate(),
-                request.getDoseMci()
-        );
+        // TODO: user later a formula to calculate the required volume
 
         // 5. Validate maximum allowed volume (reservoir capacity)
         double totalUsedVolume = capsuleRepository.findByLot(lot).stream()
@@ -60,12 +51,12 @@ public class CapsuleService {
                 .sum();
         double remainingVolume = lot.getReservoirVolumeMicroliter() - totalUsedVolume;
 
-        if (requiredVolume > remainingVolume) {
-            throw new AppValidationException(String.format(
-                    "Insufficient radioactive liquid. Required: %.2f µL, Remaining: %.2f µL (Lot: %s)",
-                    requiredVolume, remainingVolume, lot.getSupplierLotNumber()
-            ));
-        }
+//        if (requiredVolume > remainingVolume) {
+//            throw new AppValidationException(String.format(
+//                    "Insufficient radioactive liquid. Required: %.2f µL, Remaining: %.2f µL (Lot: %s)",
+//                    requiredVolume, remainingVolume, lot.getSupplierLotNumber()
+//            ));
+//        }
 
         // 6. Find available tray position
         int trayPosition = findAvailableTrayPosition();
@@ -83,21 +74,15 @@ public class CapsuleService {
             attempts++;
         }
 
-        String barcode = barcodeService.generateBarcodeText(lot.getSupplierLotNumber(), "CAPS" + sequenceStr);
-
-        // 8. Determine rack position
-        RackAssignment rackAssignment = findAvailableRackPosition();
-
         // 9. Save Capsule
         Capsule capsule = Capsule.builder()
                 .displayId(displayId)
                 .trayPosition(trayPosition)
-                .rackNumber(rackAssignment.rackNumber)
-                .rackPosition(rackAssignment.rackPosition)
+                //.rackNumber(rackAssignment.rackNumber)
+                //.rackPosition(rackAssignment.rackPosition)
                 .doseMci(request.getDoseMci())
-                .volumeMicroliter(requiredVolume)
-                .barcode(barcode)
-                .calibrationDate(request.getCalibrationDate())
+                .volumeMicroliter(0.0)
+                .clientReference(request.getClientReference())
                 .status(CapsuleStatus.WAITING)
                 .lot(lot)
                 .build();
@@ -105,10 +90,8 @@ public class CapsuleService {
         Capsule savedCapsule = capsuleRepository.save(capsule);
 
         auditLogService.log("GENERATE_CAPSULE", String.format(
-                "Generated Capsule %s (Barcode: %s) for Lot %s. Tray Pos: %d, Rack: %d Pos: %d, Vol: %.2f µL",
-                savedCapsule.getDisplayId(), savedCapsule.getBarcode(), lot.getSupplierLotNumber(),
-                savedCapsule.getTrayPosition(), savedCapsule.getRackNumber(), savedCapsule.getRackPosition(),
-                savedCapsule.getVolumeMicroliter()
+                "Generated Capsule %s for Lot %s. Tray Pos: %d, Vol: %.2f µL",
+                savedCapsule.getId(), lot.getSupplierLotNumber(), savedCapsule.getTrayPosition(), savedCapsule.getVolumeMicroliter()
         ));
 
         return mapToResponse(savedCapsule);
@@ -116,6 +99,7 @@ public class CapsuleService {
 
     public List<CapsuleResponse> getAllCapsules() {
         return capsuleRepository.findAll().stream()
+                .sorted(Comparator.comparing(Capsule::getCreatedAt).reversed())
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -123,12 +107,6 @@ public class CapsuleService {
     public CapsuleResponse getCapsuleById(UUID id) {
         Capsule capsule = capsuleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Capsule not found with ID: " + id));
-        return mapToResponse(capsule);
-    }
-
-    public CapsuleResponse getCapsuleByBarcode(String barcode) {
-        Capsule capsule = capsuleRepository.findByBarcode(barcode)
-                .orElseThrow(() -> new ResourceNotFoundException("Capsule not found with barcode: " + barcode));
         return mapToResponse(capsule);
     }
 
@@ -177,20 +155,10 @@ public class CapsuleService {
         throw new AppValidationException("Tray is full. All 92 usable tray positions are currently occupied.");
     }
 
-    private RackAssignment findAvailableRackPosition() {
-        int rack = 1;
-        int pos = 1;
-        while (true) {
-            boolean occupied = capsuleRepository.existsByRackNumberAndRackPosition(rack, pos);
-            if (!occupied) {
-                return new RackAssignment(rack, pos);
-            }
-            pos++;
-            if (pos > 24) {
-                pos = 1;
-                rack++;
-            }
-        }
+    public CapsuleResponse getCapsuleByBarcode(String barcode) {
+        Capsule capsule = capsuleRepository.findByBarcode(barcode)
+                .orElseThrow(() -> new ResourceNotFoundException("Capsule not found with barcode: " + barcode));
+        return mapToResponse(capsule);
     }
 
     public CapsuleResponse mapToResponse(Capsule capsule) {
@@ -198,25 +166,17 @@ public class CapsuleService {
                 .id(capsule.getId())
                 .displayId(capsule.getDisplayId())
                 .trayPosition(capsule.getTrayPosition())
-                .rackNumber(capsule.getRackNumber())
-                .rackPosition(capsule.getRackPosition())
+                //.rackNumber(capsule.getRackNumber())
+                //.rackPosition(capsule.getRackPosition())
                 .doseMci(capsule.getDoseMci())
                 .volumeMicroliter(capsule.getVolumeMicroliter())
-                .barcode(capsule.getBarcode())
-                .calibrationDate(capsule.getCalibrationDate())
                 .status(capsule.getStatus())
                 .lotId(capsule.getLot().getId())
                 .supplierLotNumber(capsule.getLot().getSupplierLotNumber())
+                .barcode(capsule.getId() != null ? capsule.getId().toString() : null)
+                .clientReference(capsule.getClientReference())
+                .createdAt(capsule.getCreatedAt())
+                .updatedAt(capsule.getUpdatedAt())
                 .build();
-    }
-
-    private static class RackAssignment {
-        final int rackNumber;
-        final int rackPosition;
-
-        RackAssignment(int rackNumber, int rackPosition) {
-            this.rackNumber = rackNumber;
-            this.rackPosition = rackPosition;
-        }
     }
 }
