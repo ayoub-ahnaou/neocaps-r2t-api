@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -15,12 +17,16 @@ import java.util.UUID;
 @Builder
 public class LotResponse {
     private UUID id;
+    private String productName;
     private String supplierLotNumber;
     private Double totalActivityMci;
     private Double radioactiveConcentration;
     private Double reservoirVolumeMicroliter;
-    private LocalDateTime manufacturingDate;
-    private LocalDateTime calibrationDate;
+    private LocalDate manufacturingDate;
+    private LocalDate calibrationDate;
     private Double remainingVolumeMicroliter;
     private Long capsuleCount;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

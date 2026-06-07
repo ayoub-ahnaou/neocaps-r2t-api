@@ -3,6 +3,11 @@ package com.neocaps.api.model.entity;
 import com.neocaps.api.enums.CapsuleStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -13,6 +18,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Capsule {
 
     @Id
@@ -22,32 +28,44 @@ public class Capsule {
     @Column(unique = true, nullable = false)
     private String displayId;
 
-    @Column(nullable = false)
     private Integer trayPosition;
 
-    @Column(nullable = false)
-    private Integer rackNumber;
-
-    @Column(nullable = false)
-    private Integer rackPosition;
+    // private Integer rackNumber;
+    // private Integer rackPosition;
 
     @Column(nullable = false)
     private Double doseMci;
 
     @Column(nullable = false)
-    private Double volumeMicroliter;
-
-    @Column(unique = true, nullable = false)
-    private String barcode;
+    private String clientReference;
 
     @Column(nullable = false)
-    private LocalDateTime calibrationDate;
+    private Double volumeMicroliter;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CapsuleStatus status;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "lot_id", nullable = false)
+    @JoinColumn(nullable = false)
     private Lot lot;
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.setCreatedAt(LocalDateTime.now());
+        this.setUpdatedAt(LocalDateTime.now());
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.setUpdatedAt(LocalDateTime.now());
+    }
 }

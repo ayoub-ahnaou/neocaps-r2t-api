@@ -5,11 +5,15 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.Setter;
-import java.time.LocalDateTime;
+
+import java.time.LocalDate;
 
 @Getter
 @Setter
 public class LotCreateRequest {
+
+    @NotBlank(message = "Product name is required")
+    private String productName;
 
     @NotBlank(message = "Supplier lot number is required")
     private String supplierLotNumber;
@@ -27,8 +31,8 @@ public class LotCreateRequest {
     private Double reservoirVolumeMicroliter;
 
     @NotNull(message = "Manufacturing date is required")
-    private LocalDateTime manufacturingDate;
+    private LocalDate manufacturingDate;
 
     @NotNull(message = "Calibration date is required")
-    private LocalDateTime calibrationDate;
+    private LocalDate calibrationDate;
 }

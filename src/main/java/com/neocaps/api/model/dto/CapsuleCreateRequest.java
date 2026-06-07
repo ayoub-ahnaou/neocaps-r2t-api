@@ -4,7 +4,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.Setter;
-import java.time.LocalDateTime;
+
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Getter
@@ -18,6 +19,6 @@ public class CapsuleCreateRequest {
     @Positive(message = "Capsule dose must be positive")
     private Double doseMci;
 
-    @NotNull(message = "Target calibration date is required")
-    private LocalDateTime calibrationDate;
+    @NotNull(message = "Client reference is required")
+    private String clientReference;
 }

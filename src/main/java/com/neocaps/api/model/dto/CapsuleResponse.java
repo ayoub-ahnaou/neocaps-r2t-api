@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -18,13 +20,16 @@ public class CapsuleResponse {
     private UUID id;
     private String displayId;
     private Integer trayPosition;
-    private Integer rackNumber;
-    private Integer rackPosition;
+    // private Integer rackNumber;
+    // private Integer rackPosition;
     private Double doseMci;
     private Double volumeMicroliter;
-    private String barcode;
-    private LocalDateTime calibrationDate;
     private CapsuleStatus status;
     private UUID lotId;
     private String supplierLotNumber;
+    private String barcode;
+    private String clientReference;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
