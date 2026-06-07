@@ -40,20 +40,20 @@ public class CapsuleController {
         return ResponseEntity.ok(capsuleService.getCapsuleById(id));
     }
 
-    @GetMapping("/barcode/{barcode}")
-    public ResponseEntity<CapsuleResponse> getCapsuleByBarcode(@PathVariable String barcode) {
-        return ResponseEntity.ok(capsuleService.getCapsuleByBarcode(barcode));
-    }
-
     @GetMapping("/tray")
     public ResponseEntity<List<TrayStatusResponse>> getTrayStatus() {
         return ResponseEntity.ok(capsuleService.getTrayStatus());
     }
 
+    @GetMapping("/barcode/{barcode}")
+    public ResponseEntity<CapsuleResponse> getCapsuleByBarcode(@PathVariable String barcode) {
+        return ResponseEntity.ok(capsuleService.getCapsuleByBarcode(barcode));
+    }
+
     @GetMapping("/{id}/barcode/image")
     public ResponseEntity<byte[]> getBarcodeImage(@PathVariable UUID id) {
         CapsuleResponse capsule = capsuleService.getCapsuleById(id);
-        byte[] imageBytes = barcodeService.generateCode128Image(capsule.getBarcode());
+        byte[] imageBytes = barcodeService.generateCode128Image(capsule.getId().toString());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.IMAGE_PNG);
