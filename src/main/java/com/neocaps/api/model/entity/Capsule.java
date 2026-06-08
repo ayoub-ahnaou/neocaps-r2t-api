@@ -33,6 +33,9 @@ public class Capsule {
     // private Integer rackNumber;
     // private Integer rackPosition;
 
+    @Column(nullable = false, unique = true)
+    private String barcode;
+
     @Column(nullable = false)
     private Double doseMci;
 
