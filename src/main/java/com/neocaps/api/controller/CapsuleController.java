@@ -1,9 +1,13 @@
 package com.neocaps.api.controller;
 
+import com.neocaps.api.exception.ResourceNotFoundException;
 import com.neocaps.api.model.dto.CapsuleCreateRequest;
 import com.neocaps.api.model.dto.CapsuleResponse;
 import com.neocaps.api.model.dto.TrayStatusResponse;
+import com.neocaps.api.model.entity.Capsule;
+import com.neocaps.api.repository.CapsuleRepository;
 import com.neocaps.api.service.BarcodeService;
+import com.neocaps.api.service.CapsuleLabelPrinterService;
 import com.neocaps.api.service.CapsuleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +29,8 @@ public class CapsuleController {
 
     private final CapsuleService capsuleService;
     private final BarcodeService barcodeService;
+    private final CapsuleLabelPrinterService printerService;
+    private final CapsuleRepository capsuleRepository;
 
     @PostMapping
     public ResponseEntity<CapsuleResponse> generateCapsule(@Valid @RequestBody CapsuleCreateRequest request) {
@@ -61,5 +69,24 @@ public class CapsuleController {
         headers.setCacheControl("max-age=86400"); // cache for 1 day
 
         return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
+    }
+
+    @PostMapping("/{id}/print")
+    public ResponseEntity<String> printCapsule(@PathVariable String id, @RequestBody String printerIp) {
+        try {
+            // 1. Fetch your object containing the compressed barcode
+            Capsule capsule = capsuleRepository.findById(UUID.fromString(id)).orElse(null);
+
+            // 2. Pass it to the execution service
+            if (capsule != null)
+                printerService.printCapsuleLabel(printerIp, capsule);
+            else throw new ResourceNotFoundException("Capsule not found with ID: " + id);
+
+            return ResponseEntity.ok("Print job successfully queued to Gainscha printer.");
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body("Printer communication error: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
     }
 }

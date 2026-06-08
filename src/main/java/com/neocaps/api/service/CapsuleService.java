@@ -10,6 +10,8 @@ import com.neocaps.api.model.entity.Capsule;
 import com.neocaps.api.model.entity.Lot;
 import com.neocaps.api.repository.CapsuleRepository;
 import com.neocaps.api.repository.LotRepository;
+import com.neocaps.api.utils.KeyCompressor;
+import com.neocaps.api.utils.NanoIdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -87,6 +89,7 @@ public class CapsuleService {
                 .lot(lot)
                 .build();
 
+        capsule.setBarcode(NanoIdGenerator.generateShortId());
         Capsule savedCapsule = capsuleRepository.save(capsule);
 
         auditLogService.log("GENERATE_CAPSULE", String.format(
@@ -169,6 +172,7 @@ public class CapsuleService {
                 //.rackNumber(capsule.getRackNumber())
                 //.rackPosition(capsule.getRackPosition())
                 .doseMci(capsule.getDoseMci())
+                .barcode(capsule.getBarcode())
                 .volumeMicroliter(capsule.getVolumeMicroliter())
                 .status(capsule.getStatus())
                 .lotId(capsule.getLot().getId())
