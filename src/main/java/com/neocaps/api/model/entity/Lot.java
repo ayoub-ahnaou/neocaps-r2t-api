@@ -1,5 +1,6 @@
 package com.neocaps.api.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -8,6 +9,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -52,6 +55,14 @@ public class Lot {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @JsonManagedReference
+    @OneToMany(mappedBy = "lot", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Rapport> rapports = new ArrayList<>();
+
+    @JsonManagedReference
+    @OneToMany(mappedBy = "lot", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Capsule> capsules = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         this.setCreatedAt(LocalDateTime.now());
@@ -61,5 +72,15 @@ public class Lot {
     @PreUpdate
     protected void onUpdate() {
         this.setUpdatedAt(LocalDateTime.now());
+    }
+
+    public void addRapport(Rapport rapport) {
+        rapports.add(rapport);
+        rapport.setLot(this);
+    }
+
+    public void removeRapport(Rapport rapport) {
+        rapports.remove(rapport);
+        rapport.setLot(null);
     }
 }

@@ -1,5 +1,6 @@
 package com.neocaps.api.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.neocaps.api.enums.CapsuleStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -49,8 +50,9 @@ public class Capsule {
     @Column(nullable = false)
     private CapsuleStatus status;
 
+    @JsonBackReference
     @ManyToOne(optional = false)
-    @JoinColumn(nullable = false)
+    @JoinColumn(nullable = false, name = "lot_id")
     private Lot lot;
 
     @CreatedDate
