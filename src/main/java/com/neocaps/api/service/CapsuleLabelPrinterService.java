@@ -5,57 +5,74 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.DataOutputStream;
+import javax.print.*;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 @RequiredArgsConstructor
 @Slf4j
 @Service
 public class CapsuleLabelPrinterService {
-    // Default raw printing port for thermal printers
-    private static final int PRINTER_PORT = 9100;
-
     /**
-     * Generates ZPL from the Capsule and sends it to the printer.
+     * Génère le ZPL et l'envoie à l'imprimante Gainscha connectée en USB sous Windows.
+     * @param printerName Le nom exact de votre imprimante sous Windows (ex: "Gainscha GS-2408DC")
      */
-    public void printCapsuleLabel(String printerIp, Capsule capsule) throws IOException {
+    public void printCapsuleLabel(String printerName, Capsule capsule) throws IOException, PrintException {
         String zplPayload = buildZplPayload(capsule);
-        sendToPrinter(printerIp, zplPayload);
+        sendToWindowsUsbPrinter(printerName, zplPayload);
     }
 
     /**
-     * Constructs the ZPL layout.
-     * Adjust coordinates (^FO) based on your physical label size.
+     * Utilise l'API d'impression Java pour injecter le ZPL brut dans le spouleur Windows.
+     */
+    private void sendToWindowsUsbPrinter(String printerName, String zplData) throws PrintException {
+        // 1. Définir le format de document comme "Données brutes" (Autosense)
+        DocFlavor flavor = DocFlavor.INPUT_STREAM.AUTOSENSE;
+
+        // 2. Rechercher l'imprimante par son nom Windows exact
+        PrintService[] services = PrintServiceLookup.lookupPrintServices(flavor, null);
+        PrintService targetService = null;
+
+        for (PrintService service : services) {
+            if (service.getName().equalsIgnoreCase(printerName)) {
+                targetService = service;
+                break;
+            }
+        }
+
+        // Si l'imprimante spécifiée n'est pas trouvée, on prend celle par défaut
+        if (targetService == null) {
+            targetService = PrintServiceLookup.lookupDefaultPrintService();
+            if (targetService == null) {
+                throw new PrintException("Aucune imprimante disponible sur ce système.");
+            }
+        }
+
+        // 3. Préparer le flux de données avec le ZPL
+        ByteArrayInputStream stream = new ByteArrayInputStream(zplData.getBytes(StandardCharsets.US_ASCII));
+        Doc doc = new SimpleDoc(stream, flavor, null);
+
+        // 4. Crier le job d'impression et l'envoyer
+        DocPrintJob job = targetService.createPrintJob();
+        job.print(doc, null);
+    }
+
+    /**
+     * Le layout ultra-compact (2.90cm x 2.00cm)
      */
     private String buildZplPayload(Capsule capsule) {
         return "^XA\n" +
-                "^PW231\n" +                       // Precise width: 2.90cm (231 dots)
-                "^LL160\n" +                       // Precise height: 2.00cm (160 dots)
+                "^PW231\n" +                       // Largeur: 231 dots (2.90cm)
+                "^LL160\n" +                       // Hauteur: 160 dots (2.00cm)
 
-                // 1. Database ID Text (Small font size 15x15, pushed right to the top left)
+                // 1. Texte ID
                 "^FO20,15^A0N,15,15^FDID: " + capsule.getId() + "^FS\n" +
 
-                // 2. Ultra-Compact Barcode
-                // ^BY1 (1-dot narrow bar width) is strictly mandatory to fit within 231 dots.
-                // Height is set to 70 dots, which takes up almost half of our vertical space.
+                // 2. Code-barres compact (Module à 1 dot)
                 "^BY1,2.0,70^FT20,110\n" +
                 "^BCN,70,Y,N,N^FD" + capsule.getBarcode() + "^FS\n" +
 
                 "^XZ";
-    }
-
-    /**
-     * Opens a raw socket connection and streams the bytes
-     */
-    private void sendToPrinter(String ip, String zpl) throws IOException {
-        try (Socket socket = new Socket(ip, PRINTER_PORT);
-             DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream())) {
-
-            byte[] zplBytes = zpl.getBytes(StandardCharsets.US_ASCII);
-            outputStream.write(zplBytes);
-            outputStream.flush();
-        }
     }
 }
