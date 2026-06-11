@@ -72,18 +72,18 @@ public class CapsuleController {
     }
 
     @PostMapping("/{id}/print")
-    public ResponseEntity<String> printCapsule(@PathVariable String id, @RequestBody String printerIp) {
+    public ResponseEntity<String> printCapsule(@PathVariable String id) { // 1. Retiré le @RequestBody inutile
         try {
-            // 1. Fetch your object containing the compressed barcode
-            Capsule capsule = capsuleRepository.findById(UUID.fromString(id)).orElse(null);
+            // 2. Récupération de l'objet contenant le code-barres compressé Base62
+            Capsule capsule = capsuleRepository.findById(UUID.fromString(id))
+                    .orElseThrow(() -> new ResourceNotFoundException("Capsule not found with ID: " + id));
 
-            // 2. Pass it to the execution service
-            if (capsule != null)
-                printerService.printCapsuleLabel(printerIp, capsule);
-            else throw new ResourceNotFoundException("Capsule not found with ID: " + id);
+            // 3. Envoi au service avec le nom de l'imprimante Windows en dur
+            printerService.printCapsuleLabel("Gainscha GS-2408DC", capsule);
 
             return ResponseEntity.ok("Print job successfully queued to Gainscha printer.");
-        } catch (IOException e) {
+        } catch (IOException | javax.print.PrintException e) {
+            // 4. Ajout de PrintException ici pour que Java compile sans erreur
             return ResponseEntity.internalServerError().body("Printer communication error: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
