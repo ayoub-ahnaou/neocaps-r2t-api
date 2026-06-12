@@ -30,6 +30,9 @@ public class CapsuleResponse {
     private String barcode;
     private String clientReference;
 
+    private LocalDate manufacturingDate;
+    private LocalDate calibrationDate;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

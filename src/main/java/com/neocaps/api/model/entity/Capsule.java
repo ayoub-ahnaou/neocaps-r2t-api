@@ -50,6 +50,12 @@ public class Capsule {
     @Column(nullable = false)
     private CapsuleStatus status;
 
+    @Column(nullable = false)
+    private LocalDate manufacturingDate;
+
+    @Column(nullable = false)
+    private LocalDate calibrationDate;
+
     @JsonBackReference
     @ManyToOne(optional = false)
     @JoinColumn(nullable = false, name = "lot_id")

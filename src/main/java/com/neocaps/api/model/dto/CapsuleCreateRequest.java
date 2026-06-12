@@ -21,4 +21,10 @@ public class CapsuleCreateRequest {
 
     @NotNull(message = "Client reference is required")
     private String clientReference;
+
+    @NotNull(message = "Manufacturing date is required")
+    private LocalDate manufacturingDate;
+
+    @NotNull(message = "Calibration date is required")
+    private LocalDate calibrationDate;
 }
