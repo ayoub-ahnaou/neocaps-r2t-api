@@ -86,10 +86,12 @@ public class CapsuleService {
                 .volumeMicroliter(0.0)
                 .clientReference(request.getClientReference())
                 .status(CapsuleStatus.WAITING)
+                .barcode(NanoIdGenerator.generateShortId())
+                .manufacturingDate(request.getManufacturingDate())
+                .calibrationDate(request.getCalibrationDate())
                 .lot(lot)
                 .build();
 
-        capsule.setBarcode(NanoIdGenerator.generateShortId());
         Capsule savedCapsule = capsuleRepository.save(capsule);
 
         auditLogService.log("GENERATE_CAPSULE", String.format(
@@ -177,8 +179,9 @@ public class CapsuleService {
                 .status(capsule.getStatus())
                 .lotId(capsule.getLot().getId())
                 .supplierLotNumber(capsule.getLot().getSupplierLotNumber())
-                .barcode(capsule.getId() != null ? capsule.getId().toString() : null)
                 .clientReference(capsule.getClientReference())
+                .manufacturingDate(capsule.getManufacturingDate())
+                .calibrationDate(capsule.getCalibrationDate())
                 .createdAt(capsule.getCreatedAt())
                 .updatedAt(capsule.getUpdatedAt())
                 .build();

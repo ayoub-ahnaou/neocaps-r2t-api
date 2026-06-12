@@ -1,6 +1,7 @@
 package com.neocaps.api.service;
 
 import com.neocaps.api.enums.UserRole;
+import com.neocaps.api.enums.UserStatus;
 import com.neocaps.api.exception.AppValidationException;
 import com.neocaps.api.model.dto.UserCreateRequest;
 import com.neocaps.api.model.dto.UserResponse;
@@ -15,7 +16,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -34,6 +38,8 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
@@ -51,6 +57,7 @@ public class UserService implements UserDetailsService {
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
+                .status(UserStatus.ACTIVE)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -60,6 +67,8 @@ public class UserService implements UserDetailsService {
 
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll().stream()
+                // Sort by last login time, most recent first
+                .sorted(Comparator.comparing(User::getLastLogin, Comparator.nullsLast(Comparator.reverseOrder())))
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -75,6 +84,8 @@ public class UserService implements UserDetailsService {
                 .id(user.getId())
                 .username(user.getUsername())
                 .role(user.getRole())
+                .lastLogin(user.getLastLogin())
+                .status(user.getStatus())
                 .build();
     }
 }
