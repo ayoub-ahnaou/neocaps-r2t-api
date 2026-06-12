@@ -36,10 +36,10 @@ public class SecurityConfig {
                 .requestMatchers("/ws-plc/**").permitAll()
                 
                 // Allow public access to authentication endpoints (login, register, logout)
-                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/logout").permitAll()
                 
                 // User administration requires ADMIN role
-                .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
+                .requestMatchers("/api/users").hasRole("ADMIN")
                 
                 // Audit logs require ADMIN role
                 .requestMatchers("/api/audit-logs").hasRole("ADMIN")
