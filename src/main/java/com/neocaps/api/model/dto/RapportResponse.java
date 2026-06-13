@@ -15,6 +15,8 @@ public class RapportResponse {
     private UUID id;
     private String title;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
     private String generatedBy;
     private String filePath;
     private Lot lot;
